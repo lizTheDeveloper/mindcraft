@@ -5,6 +5,8 @@ import { getKey } from '../utils/keys.js';
 export class Claude {
     constructor(model_name, url, folder="bot_log") {
         this.model_name = model_name;
+        this.folder = folder;
+        
 
         let config = {};
         if (url)

@@ -117,6 +117,54 @@ export class GPT {
         return embedding.data[0].embedding;
     }
 
+    encode_image(image) {
+        let base64_image = Buffer.from(image).toString('base64');
+        return base64_image;
+    }
+
+    async uploadImage(image, max_tokens=300) {
+        base64_image = this.encode_image(image)
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${this.openai.api_key}`,
+        }
+
+        payload = {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": `data:image/jpeg;base64,${base64_image}`
+                            }
+                        }
+                    ]
+                }
+            ],
+            "max_tokens": max_tokens
+        }
+        // in python:
+        // response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+        // response_json = response.json()
+        // in javascript
+        let response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify(payload)
+        });
+        
+        let response_json = await response.json();
+        return response_json.choices[0].message.content;
+    }
+
     async logChatCompletion(messages, completion) {
         // async Log the completion in a session folder in a timestamp.json file
         const timestamp = Date.now();

@@ -3,6 +3,7 @@ import { strictFormat } from '../utils/text.js';
 export class Local {
     constructor(model_name, url, folder="bot_log") {
         this.model_name = model_name;
+        this.folder = folder;
         this.url = url || 'http://127.0.0.1:11434';
         this.chat_endpoint = '/api/chat';
         this.embedding_endpoint = '/api/embeddings';

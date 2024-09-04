@@ -1,5 +1,7 @@
 import * as skills from '../library/skills.js';
 import settings from '../../../settings.js';
+// prismarine viewer
+
 
 function wrapExecution(func, timeout=-1, resume_name=null) {
     return async function (agent, ...args) {
@@ -100,6 +102,7 @@ export const actionsList = [
         description: 'Move away from the current location in any direction by a given distance.',
         params: {'distance': '(number) The distance to move away.'},
         perform: wrapExecution(async (agent, distance) => {
+            // console.log(agent.bot, distance)
             await skills.moveAway(agent.bot, distance);
         })
     },
@@ -233,5 +236,22 @@ export const actionsList = [
             agent.bot.emit('idle');  // to trigger the goal
             return 'Set goal: ' + agent.npc.data.curr_goal.name;
         }
+    },
+    {
+        name: "!lookAt",
+        description: "Look at your surroundings.",
+        perform: wrapExecution(async (agent) => {
+            console.log("Looking at surroundings");
+            let screenshot = await agent.takeScreenshot("screenshot.jpg");
+            console.log("Screenshot taken");
+            if (agent.chat_model.uploadImage) {
+                // get the image and send it to openai
+                let response = agent.chat_model.uploadImage(screenshot);
+                // get the response and send it internally to the agent
+                agent.bot.chat(response);
+
+            }
+            
+        })
     }
 ];

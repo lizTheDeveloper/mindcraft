@@ -1,5 +1,6 @@
 import * as world from '../library/world.js';
 import * as mc from '../../utils/mcdata.js';
+import Vec3 from 'vec3';
 
 
 const pad = (str) => {
@@ -16,7 +17,6 @@ export const queryList = [
             let res = 'STATS';
             let pos = bot.entity.position;
             // display position to 2 decimal places
-            res += `\n- Position: x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}, z: ${pos.z.toFixed(2)}`;
             res += `\n- Gamemode: ${bot.game.gameMode}`;
             res += `\n- Health: ${Math.round(bot.health)} / 20`;
             res += `\n- Hunger: ${Math.round(bot.food)} / 20`;
@@ -27,10 +27,36 @@ export const queryList = [
             if (bot.thunderState > 0)
                 weather = "Thunderstorm";
             res += `\n- Weather: ${weather}`;
-            // let block = bot.blockAt(pos);
+            
+            // use bot.findBlocks() to get the blocks in front of the bot, which returns an array of block positions that match the criteria
+            
+            res += `\n- My Position: x: ${pos.x.toFixed(2)}, y: ${pos.y.toFixed(2)}, z: ${pos.z.toFixed(2)}`;
+            let blocksNearMe = bot.findBlocks({
+                matching: (block) => true,
+                maxDistance: 5,
+                count: 27,
+                useExtraInfo: true
+            });
+            // for each block get the block type and position
+            blocksNearMe = blocksNearMe.map(blockPosition => {
+                // now get the block at the position
+                let block = bot.blockAt(blockPosition);
+                
+                return {
+                    name: block.displayName,
+                    position: block.position
+                };
+            });
+
+            // turn into a string of block names and their coordinates
+            let blockStr = blocksNearMe.map(block => `${block.name} at (${block.position.x}, ${block.position.y}, ${block.position.z})`).join(', ');
+            res += `\n- Blocks near me: ${blockStr}`;
+            
+
             // res += `\n- Artficial light: ${block.skyLight}`;
             // res += `\n- Sky light: ${block.light}`;
             // light properties are bugged, they are not accurate
+
 
             if (bot.time.timeOfDay < 6000) {
                 res += '\n- Time: Morning';

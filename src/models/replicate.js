@@ -7,6 +7,7 @@ export class ReplicateAPI {
 	constructor(model_name, url, folder = 'bot_log') {
 		this.model_name = model_name;
 		this.url = url;
+		this.folder = folder;
 
 		if (this.url) {
 			console.warn('Replicate API does not support custom URLs. Ignoring provided URL.');

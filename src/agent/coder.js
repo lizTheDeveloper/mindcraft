@@ -101,7 +101,7 @@ export class Coder {
         for (let i=0; i<5; i++) {
             if (this.agent.bot.interrupt_code)
                 return interrupt_return;
-            console.log(messages)
+            // console.log(messages)
             let res = await this.agent.prompter.promptCoding(JSON.parse(JSON.stringify(messages)));
             if (this.agent.bot.interrupt_code)
                 return interrupt_return;
@@ -181,6 +181,7 @@ export class Coder {
 
     // returns {success: bool, message: string, interrupted: bool, timedout: false}
     async execute(func, timeout=10) {
+        // console.log(func.toString());
         if (!this.code_template) return {success: false, message: "Code template not loaded.", interrupted: false, timedout: false};
 
         let TIMEOUT;
@@ -201,6 +202,10 @@ export class Coder {
             let timedout = this.timedout;
             this.clear();
             if (!interrupted && !this.generating) this.agent.bot.emit('idle');
+            // seems like the spot to put a screencap
+            // read the code and find out the last block that was modified
+            
+
             return {success:true, message: output, interrupted, timedout};
         } catch (err) {
             this.executing = false;

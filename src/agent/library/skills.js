@@ -843,7 +843,7 @@ export async function moveAway(bot, distance) {
     if (bot.modes.isOn('cheat')) {
         const path = await bot.pathfinder.getPathTo(defaultMovements, inverted_goal, 10000);
         let last_move = path.path[path.path.length-1];
-        console.log(last_move);
+        // console.log(last_move);
         if (last_move) {
             let x = Math.floor(last_move.x);
             let y = Math.floor(last_move.y);

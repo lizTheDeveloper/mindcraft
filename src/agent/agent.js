@@ -7,8 +7,16 @@ import { containsCommand, commandExists, executeCommand, truncCommandMessage } f
 import { NPCContoller } from './npc/controller.js';
 import { MemoryBank } from './memory_bank.js';
 import settings from '../../settings.js';
-import { mineflayer } from 'prismarine-viewer'
-
+import pkg from 'prismarine-viewer';
+const { mineflayer, Viewer, getBufferFromStream } = pkg;
+import fetch from 'node-fetch';
+import fs from 'fs';
+import path from 'path';
+import { Vec3 } from 'vec3';
+import { createCanvas } from 'node-canvas-webgl';
+import { Worker } from 'worker_threads';
+import * as THREE from 'three';
+import { performance } from 'perf_hooks';
 
 
 export class Agent {
@@ -34,8 +42,10 @@ export class Agent {
             // wait for a bit so stats are not undefined
             await new Promise((resolve) => setTimeout(resolve, 1000));
             const mineFlayerViewer = mineflayer
-            mineFlayerViewer(this.bot, { port: 3007, firstPerson: true })
+            this.bot.mineFlayerViewer = mineFlayerViewer(this.bot, { port: 3007, firstPerson: false })
 
+            // take a screenshot to initialize the viewer
+            
             console.log(`${this.name} spawned.`);
             this.coder.clear();
             
@@ -45,13 +55,17 @@ export class Agent {
                 "Set the difficulty to",
                 "Teleported ",
                 "Set the weather to",
-                "Gamerule "
+                "Gamerule ",
+                "Changed block",
+                "Changed the block"
             ];
             const eventname = settings.profiles.length > 1 ? 'whisper' : 'chat';
             this.bot.on(eventname, (username, message) => {
                 if (username === this.name) return;
                 
                 if (ignore_messages.some((m) => message.startsWith(m))) return;
+                if (message.includes('changed a block')) return;
+                if (message.includes('changed the block')) return;
 
                 console.log('received message from', username, ':', message);
 
@@ -129,12 +143,12 @@ export class Agent {
             let command_name = containsCommand(res);
 
             if (command_name) { // contains query or command
-                console.log(`Full response: ""${res}""`)
+                // console.log(`Full response: ""${res}""`)
                 res = truncCommandMessage(res); // everything after the command is ignored
                 this.history.add(this.name, res);
                 if (!commandExists(command_name)) {
                     this.history.add('system', `Command ${command_name} does not exist. Use !newAction to perform custom actions.`);
-                    console.log('Agent hallucinated command:', command_name)
+                    console.log('Agent hallucinated command:', command_name);
                     continue;
                 }
                 let pre_message = res.substring(0, res.indexOf(command_name)).trim();
@@ -245,4 +259,33 @@ export class Agent {
         this.history.save();
         process.exit(1);
     }
+
+    async takeScreenshot (filename) {
+        const width = 512;
+        const height = 512;
+        const canvas = createCanvas(width, height);
+        const renderer = new THREE.WebGLRenderer({ canvas });
+        const viewer = mineflayer(this.bot, { port: 3007, firstPerson: false });
+      
+        const worldView = this.bot.mineFlayerViewer.worldView;
+        viewer.listen(worldView);
+      
+        const center = this.bot.entity.position;
+        viewer.camera.position.set(center.x, center.y + 1.6, center.z); // Adjust for player height
+        viewer.camera.lookAt(new THREE.Vector3(center.x, center.y, center.z));
+      
+        await worldView.init(center);
+        await viewer.world.waitForChunksToRender();
+        renderer.render(viewer.scene, viewer.camera);
+      
+        const imageStream = canvas.createJPEGStream({
+          bufsize: 4096,
+          quality: 100,
+          progressive: false
+        });
+        const buf = await getBufferFromStream(imageStream);
+        await fs.mkdir(path.join(__dirname, 'screenshots/'), { recursive: true });
+        await fs.writeFile(path.join(__dirname, `screenshots/${filename}.jpg`), buf);
+        console.log('Screenshot saved');
+      };
 }
